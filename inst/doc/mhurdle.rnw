@@ -13,8 +13,8 @@
 \Plaintitle{Multiple hurdle models in R: The mhurdle Package}
 
 % \footnote{This package has been developed as part
-% of a PhD dissertation carried out by Stéphane Hoareau
-% \cite{Hoareau/09} at the University of La Réunion under the
+% of a PhD dissertation carried out by St'ephane Hoareau
+% \cite{Hoareau/09} at the University of La R'eunion under the
 % supervision of Fabrizio Carlevaro and Yves Croissant.}
 
 
