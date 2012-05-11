@@ -6,15 +6,23 @@
 }
 \usage{
 vuongtest(x, y,
-          type = c("non.nested", "nested", "overlapping"),
-          hyp = FALSE)
+          type = c("non-nested", "nested", "overlapping"),
+          hyp = FALSE,
+          variance = c("centered", "uncentered"),
+          matrix = c("large", "reduced")
+         )
 }
 \arguments{
   \item{x}{a first fitted model of class \code{"mhurdle"},}
   \item{y}{a second fitted model of class \code{"mhurdle"},}
   \item{type}{the kind of test to be computed,}
   \item{hyp}{a boolean, \code{TRUE} if one of the models is asumed to be
-    the true model.}
+    the true model,}
+  \item{variance}{the variance is estimated using the \code{centered} or
+    \code{uncentered} expression,}
+  \item{matrix}{the W matrix can be computed using the general
+    expression \code{large} or the reduced matrix \code{reduced} (only
+    relevant for the nested case),}
 }
 \value{
   an object of class \code{"htest"}
@@ -29,15 +37,19 @@ vuongtest(x, y,
   \code{vuong} in package \code{pscl}.
 }
 \examples{
-## dependent simple hurdle ptobit vs an
-## independent double hurdle ptobit
 
-data("tobin",package="survival")
-dhi <- mhurdle(durable ~ 0 | age + quant | age + quant, tobin, 
-             dist = "n", corr = FALSE)
-dhs <- mhurdle(durable ~ 0 | age + quant | age + quant, tobin, 
-              dist = "l", corr = FALSE)
-vuongtest(dhi, dhs)
+# Vuong test for strictly non-nested models, triple hurdle vs double
+# hurdle models
+data("Comics", package = "mhurdle")
+Comics$incu <- with(Comics, income / cu)
+Comics$incum <- with(Comics, incu / mean(incu))
+model5d <- mhurdle(comics ~ gender + educ + age |  log(incum) +
+                   I(log(incum)^2) + I(log(incum)^3) + size | 0,
+                   Comics, corr = "h1", dist = "n", method = 'bfgs')
+model8d1 <- mhurdle(comics ~ gender + educ  |  log(incum) +
+                    I(log(incum)^2) + I(log(incum)^3) + size | age,
+                    Comics, corr = "h1", dist = "n", method = 'bfgs')
+vuongtest(model5d, model8d1)
 
 }
 \keyword{htest}
