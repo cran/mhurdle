@@ -1,6 +1,6 @@
 Package: mhurdle
-Version: 0.1-2
-Date: 2012-05-11
+Version: 0.1-3
+Date: 2012-07-17
 Title: Estimation of models with limited dependent variables
 Author: Fabrizio Carlevaro <fabrizio.carlevaro@unige.ch>, Yves
         Croissant <yves.croissant@univ-reunion.fr>, Stephane Hoareau
@@ -15,6 +15,6 @@ License: GPL (>= 2)
 URL: http://www.r-project.org
 Repository: CRAN
 Repository/R-Forge/Project: mhurdle
-Repository/R-Forge/Revision: 26
-Packaged: 2012-05-29 14:16:20 UTC; rforge
-Date/Publication: 2012-05-31 08:44:49
+Repository/R-Forge/Revision: 27
+Packaged: 2012-07-17 06:20:45 UTC; rforge
+Date/Publication: 2012-07-18 14:17:27
