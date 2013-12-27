@@ -17,12 +17,12 @@
 \usage{
 mhurdle(formula, data, subset, weights, na.action,
      start = NULL,
-     dist = c("l","t","n"),
+     dist = c("ln","tn","n", "bc", "ihs"),
      corr = NULL, ...)
 \method{coef}{mhurdle}(object,
-   which = c("all", "h1", "h2", "h3", "other", "sigma", "rho"), ...)
+   which = c("all", "h1", "h2", "h3", "sd", "corr", "tr"), ...)
 \method{vcov}{mhurdle}(object,
-   which = c("all", "h1", "h2", "h3", "other", "sigma", "rho"), ...)
+   which = c("all", "h1", "h2", "h3", "sd", "corr", "tr"), ...)
 \method{logLik}{mhurdle}(object, naive = FALSE, ...)
 \method{print}{mhurdle}(x, digits = max(3, getOption("digits") - 2),
                      width = getOption("width"), ...)
@@ -46,8 +46,11 @@ mhurdle(formula, data, subset, weights, na.action,
   \item{dist}{the distribution of the error of the consumption
     equation: one of \code{"n"} (normal), \code{"l"} (log-normal) or \code{"t"} (truncated
     normal),}
-  \item{corr}{a boolean, \code{TRUE} if the two error terms are
-    correlated,}
+  \item{corr}{indicates whether the errors of the different equations
+   are correlated. For models with two equations, this can be either
+   \code{"d"} for dependent and \code{"i"} for independent. For models
+   with three equations, this should be a character of length three
+   containing values of "i" and "d",}
   \item{naive}{a boolean, it \code{TRUE}, the likelihood of the naive
     model is returned,}
   \item{object,x}{an object of class \code{"mhurdle"},}
@@ -142,17 +145,17 @@ or a double hurdle model if \code{dist="n"}.
 % \seealso{
 % }
 \examples{
-data("Comics", package = "mhurdle")
-Comics$incu <- with(Comics, income / cu)
-Comics$incum <- with(Comics, incu / mean(incu))
-# A tobit model
-model3 <- mhurdle(comics ~ 0 | log(incum) + I(log(incum)^2) +
-                  I(log(incum)^3) + age  + gender + educ +
-                  size| 0, Comics, dist = "n", method = 'bfgs')
-# A dependent double hurdle example
-model5d <- mhurdle(comics ~ gender + educ + age |  log(incum) +
-                   I(log(incum)^2) + I(log(incum)^3) + size | 0,
-                   Comics, corr = "h1", dist = "n", method = 'bfgs')
+data("tobin", package = "survival")
+#  tobit model
+model010 <- mhurdle(durable ~ 0 | age + quant | 0, tobin, dist = "n")
+#  independent double hurdle model
+model110i <- mhurdle(durable ~ age |  quant | 0, tobin,  dist = "n")
+# Cragg log-normal single hurdle model
+model100il <- mhurdle(durable ~ age |  quant | 0, tobin, dist = "ln")
+# Cragg truncated-normal single hurdle model
+model100it <- update(model100il, dist = "tn")
+# a double-hurdle p-tobit
+model011i <- mhurdle(durable ~ 0 |  quant | age, tobin,  dist = "n")
 }
 % \author{}
 \keyword{regression}
