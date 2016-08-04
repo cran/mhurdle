@@ -17,12 +17,14 @@
 \usage{
 mhurdle(formula, data, subset, weights, na.action,
      start = NULL,
-     dist = c("ln","tn","n", "bc", "ihs"),
-     corr = NULL, ...)
+     dist = c("ln", "n", "bc", "ihs"),
+     h2 = FALSE,
+     scaled = TRUE,
+     corr = FALSE, robust = TRUE, ...)
 \method{coef}{mhurdle}(object,
-   which = c("all", "h1", "h2", "h3", "sd", "corr", "tr"), ...)
+   which = c("all", "h1", "h2", "h3", "h4", "sd", "corr", "tr", "pos"), ...)
 \method{vcov}{mhurdle}(object,
-   which = c("all", "h1", "h2", "h3", "sd", "corr", "tr"), ...)
+   which = c("all", "h1", "h2", "h3", "h4", "sd", "corr", "tr", "pos"), ...)
 \method{logLik}{mhurdle}(object, naive = FALSE, ...)
 \method{print}{mhurdle}(x, digits = max(3, getOption("digits") - 2),
                      width = getOption("width"), ...)
@@ -43,14 +45,17 @@ mhurdle(formula, data, subset, weights, na.action,
   \item{weights}{see \code{\link{lm}},}
   \item{na.action}{see \code{\link{lm}},}
   \item{start}{starting values,}
-  \item{dist}{the distribution of the error of the consumption
-    equation: one of \code{"n"} (normal), \code{"l"} (log-normal) or \code{"t"} (truncated
-    normal),}
-  \item{corr}{indicates whether the errors of the different equations
-   are correlated. For models with two equations, this can be either
-   \code{"d"} for dependent and \code{"i"} for independent. For models
-   with three equations, this should be a character of length three
-   containing values of "i" and "d",}
+  \item{dist}{the distribution of the error of the consumption equation:
+    one of \code{"n"} (normal), \code{"ln"} (log-normal) \code{"bc"}
+    (box-cox normal) and \code{"ihs"} (inverse hyperbolic sinus
+    transformation),}
+  \item{h2}{if \code{TRUE} the second hurdle is effective, it is not otherwise,}
+  \item{scaled}{if \code{TRUE}, the dependent variable is divided by its
+    geometric mean,}
+   \item{corr}{a boolean indicating whether the errors of the different
+     equations are correlated or not,}
+   \item{robust}{transformation of the structural parameters in order to
+   avoid numerical problems,}
   \item{naive}{a boolean, it \code{TRUE}, the likelihood of the naive
     model is returned,}
   \item{object,x}{an object of class \code{"mhurdle"},}
@@ -65,14 +70,14 @@ mhurdle(formula, data, subset, weights, na.action,
   \item{\dots}{further arguments.}
   
 }
+
 \value{
   
-
   an object of class \code{c("mhurdle", "maxLik")}.
     
   A \code{"mhurdle"} object has the following elements :
   
-  %  \describe{
+\describe{
   \item{coefficients}{the vector of coefficients,}
   \item{vcov}{the covariance matrix of the coefficients,}
   \item{fitted.values}{a matrix of fitted.values, the first column being
@@ -90,6 +95,7 @@ mhurdle(formula, data, subset, weights, na.action,
   \item{call}{the call,}
   \item{rho}{the lagrange multiplier test of no correlation.}
     
+}
 }
 
 \details{
@@ -145,17 +151,21 @@ or a double hurdle model if \code{dist="n"}.
 % \seealso{
 % }
 \examples{
-data("tobin", package = "survival")
-#  tobit model
-model010 <- mhurdle(durable ~ 0 | age + quant | 0, tobin, dist = "n")
-#  independent double hurdle model
-model110i <- mhurdle(durable ~ age |  quant | 0, tobin,  dist = "n")
-# Cragg log-normal single hurdle model
-model100il <- mhurdle(durable ~ age |  quant | 0, tobin, dist = "ln")
-# Cragg truncated-normal single hurdle model
-model100it <- update(model100il, dist = "tn")
-# a double-hurdle p-tobit
-model011i <- mhurdle(durable ~ 0 |  quant | age, tobin,  dist = "n")
+
+data("Interview", package = "mhurdle")
+
+# independent double hurdle model
+idhm <- mhurdle(vacations ~ car + size | linc + linc2 | 0, Interview,
+              dist = "ln", h2 = TRUE, method = "bfgs")
+
+# dependent double hurdle model
+ddhm <- mhurdle(vacations ~ car + size | linc + linc2  | 0, Interview,
+              dist = "ln", h2 = TRUE, method = "bfgs", corr = TRUE)
+
+# a double hurdle p-tobit model
+ptm <- mhurdle(vacations ~ 0 | linc + linc2 | car + size, Interview,
+              dist = "ln", h2 = TRUE, method = "bfgs", corr = TRUE)
+
 }
 % \author{}
 \keyword{regression}

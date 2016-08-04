@@ -1,175 +1,220 @@
 ### R code from vignette source 'mhurdle.rnw'
 
 ###################################################
-### code chunk number 1: mhurdle.rnw:105-106
+### code chunk number 1: init
 ###################################################
 options(prompt= "R> ", useFancyQuotes = FALSE)
 
 
 ###################################################
-### code chunk number 2: mhurdle.rnw:1618-1620
+### code chunk number 2: Formula
 ###################################################
 library("Formula")
 f <- Formula(y ~ x11 + x12  | x21 + x22 | x31 + x32)
 
 
 ###################################################
-### code chunk number 3: mhurdle.rnw:1727-1728
+### code chunk number 3: Library
 ###################################################
 library("mhurdle")
 
 
 ###################################################
-### code chunk number 4: mhurdle.rnw:1756-1760
+### code chunk number 4: Data
 ###################################################
-data("Comics", package = "mhurdle")
-head(Comics, 3)
-mean(Comics$comics == 0)
-max(Comics$comics)
-
-
-###################################################
-### code chunk number 5: mhurdle.rnw:1827-1834
-###################################################
-Comics$incu <- with(Comics, income / cu)
-Comics$incum <- with(Comics, incu / mean(incu))
-
-
-m010 <- mhurdle(comics ~ 0 | log(incum) + I(log(incum)^2) +
-                I(log(incum)^3) + age  + gender + educ +
-                size| 0, data = Comics, dist = "n", method = 'bfgs')
+data("Interview", package = "mhurdle")
+head(Interview, 3)
+mean(Interview$shows == 0)
+max(Interview$shows)
 
 
 ###################################################
-### code chunk number 6: mhurdle.rnw:1847-1850
+### code chunk number 5: onequation
 ###################################################
-m110d <- mhurdle(comics ~ gender + educ + age |  log(incum) +
-                 I(log(incum)^2) + I(log(incum)^3) + size | 0,
-                 data = Comics, corr = "d", dist = "n", method = 'bfgs')
+Sn <- mhurdle(vacations ~ 0 | I(car > 0) + size + linc + linc2 + age + age2,
+              Interview, dist = "n", h2 = TRUE, corr = FALSE,
+              method = "bhhh", print.level = 0)
+Sbc <- update(Sn, dist = "bc")
+Sln <- update(Sn, dist = "ln")
+library(texreg)
 
 
 ###################################################
-### code chunk number 7: mhurdle.rnw:1857-1858
+### code chunk number 6: mhurdle.rnw:2228-2232 (eval = FALSE)
 ###################################################
-m110i <- update(m110d, corr = NULL)
+## texreg(list(Sn, Sbc, Sln), 
+##        custom.model.names = c("normal tobit", "log-normal tobit", "box-cox tobit"), 
+##        caption = "Estimation of one-equation models", 
+##        label = "tab:oneq", pos = "ht")
 
 
 ###################################################
-### code chunk number 8: mhurdle.rnw:1867-1868
+### code chunk number 7: mhurdle.rnw:2235-2239
 ###################################################
-m100d <- update(m110d, dist = "ln")
+texreg(list(Sn, Sbc, Sln), 
+       custom.model.names = c("normal tobit", "log-normal tobit", "box-cox tobit"), 
+       caption = "Estimation of one-equation models", 
+       label = "tab:oneq", pos = "ht")
 
 
 ###################################################
-### code chunk number 9: mhurdle.rnw:1873-1874
+### code chunk number 8: selection
 ###################################################
-m100i <- update(m100d, corr = NULL)
+Stn <- mhurdle(foodaway ~ size + smsa + age + age2 | linc + linc2, Interview, 
+               dist = "n", h2 = FALSE, corr = FALSE, method = "bhhh", print.level = 0)
+Sbc <- update(Stn, dist = "bc")
+Sln <- update(Stn, dist = "ln")
 
 
 ###################################################
-### code chunk number 10: mhurdle.rnw:1881-1884
+### code chunk number 9: mhurdle.rnw:2272-2274
 ###################################################
-m111dii <- mhurdle(comics ~ gender + educ  |  log(incum) +
-                   I(log(incum)^2) + I(log(incum)^3) + size | age,
-                   data = Comics, corr = "dii", dist = "n", method = 'bfgs')
+Slnd <- update(Sln, corr = TRUE)
+coef(summary(Slnd), "corr")
 
 
 ###################################################
-### code chunk number 11: mhurdle.rnw:1893-1894
+### code chunk number 10: mhurdle.rnw:2282-2286 (eval = FALSE)
 ###################################################
-summary(m111dii)
+## texreg(list(Stn, Sln, Sbc), 
+##        custom.model.names = c("truncated-normal", "log-normal", "box-cox"), 
+##        caption = "Estimation of single hurdle selection models", 
+##        label = "tab:sep", pos = "ht")
 
 
 ###################################################
-### code chunk number 12: mhurdle.rnw:1910-1915
+### code chunk number 11: mhurdle.rnw:2290-2294
 ###################################################
-coef(m111dii, "h2")
-coef(m110d, "h1")
-coef(m110d, "sd")
-coef(summary(m111dii), "h3")
-vcov(m111dii, "h3")
+texreg(list(Stn, Sln, Sbc), 
+       custom.model.names = c("truncated-normal", "log-normal", "box-cox"), 
+       caption = "Estimation of single hurdle selection models", 
+       label = "tab:sep", pos = "ht")
 
 
 ###################################################
-### code chunk number 13: mhurdle.rnw:1922-1924
+### code chunk number 12: ptobit
 ###################################################
-logLik(m110d)
-logLik(m110d, naive = TRUE)
+ptobit <- mhurdle(apparel ~ 0 | linc + linc2 | factor(month) + smsa,
+                  Interview, corr = TRUE, dist = "ln", h2 = FALSE,
+                  method = "bhhh")
 
 
 ###################################################
-### code chunk number 14: mhurdle.rnw:1933-1934
+### code chunk number 13: ThreeHurdlesDep
 ###################################################
-head(fitted(m110d))
+H3D <- mhurdle(shows ~ educ + size | linc + linc2 | age + age2 + smsa, 
+               Interview, dist = "ln", h2 = TRUE, corr = TRUE, method = "bhhh")
 
 
 ###################################################
-### code chunk number 15: mhurdle.rnw:1941-1949
+### code chunk number 14: ThreeHurdlesInd
 ###################################################
-predict(m110d,
-        newdata = data.frame(
-            comics = c(0, 1, 2),
-            gender = c("female", "female", "male"),
-            age = c(20, 18, 32),
-            educ = c(10, 20, 5),
-            incum = c(4, 8, 2),
-            size = c(2, 1, 3)))
+H3I <- update(H3D, corr = FALSE)
 
 
 ###################################################
-### code chunk number 16: mhurdle.rnw:1968-1969
+### code chunk number 15: TwoHurdlesThreeEqs
 ###################################################
-rsq(m110d, type = "coefdet")
+H2D <- update(H3D, h2 = FALSE)
 
 
 ###################################################
-### code chunk number 17: mhurdle.rnw:1981-1982
+### code chunk number 16: Selection
 ###################################################
-rsq(m110d, type = "lratio", adj = TRUE)
+S2D <- mhurdle(shows ~ educ + size + age + age2 + smsa | linc + linc2, 
+               Interview, dist = "ln", h2 = TRUE, corr = TRUE, method = "bhhh")
 
 
 ###################################################
-### code chunk number 18: mhurdle.rnw:1994-1995
+### code chunk number 17: Ptobit
 ###################################################
-vuongtest(m110d, m111dii)
+P2D <- mhurdle(shows ~ 0 | linc + linc2 | educ + size + age + age2 + smsa, 
+               Interview, dist = "ln", h2 = TRUE, corr = TRUE, method = "bhhh")
 
 
 ###################################################
-### code chunk number 19: mhurdle.rnw:2018-2020
+### code chunk number 18: Summary
 ###################################################
-vuongtest(m100d, m100i, type = 'nested', hyp = TRUE)
-vuongtest(m100d, m100i, type = 'nested', hyp = FALSE)
+summary(H3D)
 
 
 ###################################################
-### code chunk number 20: mhurdle.rnw:2034-2035
+### code chunk number 19: Methods
 ###################################################
-coef(summary(m100d), "corr")
+coef(H3D, "h2")
+coef(H3D, "h1")
+coef(H3D, "sd")
+coef(summary(H3D), "h3")
+vcov(H3D, "h3")
 
 
 ###################################################
-### code chunk number 21: mhurdle.rnw:2047-2050
+### code chunk number 20: LogLik
 ###################################################
-m010bis <- mhurdle(comics ~ 0 | log(incum) + I(log(incum)^2) +
-                   I(log(incum)^3)  + gender + educ + age +
-                   empl+area| 0, data = Comics, dist = "n", method = 'bfgs')
+logLik(H3D)
+logLik(H3D, naive = TRUE)
 
 
 ###################################################
-### code chunk number 22: mhurdle.rnw:2057-2058
+### code chunk number 21: Fitted (eval = FALSE)
 ###################################################
-vuongtest(m010, m010bis, type="overlapping")
+## head(fitted(H3D))
 
 
 ###################################################
-### code chunk number 23: mhurdle.rnw:2065-2066
+### code chunk number 22: Predict (eval = FALSE)
 ###################################################
-vuongtest(m010, m010bis, type="non-nested")
+## predict(H3D,
+##         newdata = data.frame(
+##             comics = c(0, 1, 2),
+##             gender = c("female", "female", "male"),
+##             age = c(20, 18, 32),
+##             educ = c(10, 20, 5),
+##             incum = c(4, 8, 2),
+##             size = c(2, 1, 3)))
 
 
 ###################################################
-### code chunk number 24: mhurdle.rnw:2076-2077
+### code chunk number 23: Rsq1 (eval = FALSE)
 ###################################################
-vuongtest(m010bis, m010, type="overlapping", hyp=TRUE)
+## rsq(H3D, type = "coefdet")
+
+
+###################################################
+### code chunk number 24: Rsq2
+###################################################
+rsq(H3D, type = "lratio", adj = TRUE)
+
+
+###################################################
+### code chunk number 25: VuongUnnested
+###################################################
+vuongtest(S2D, P2D)
+
+
+###################################################
+### code chunk number 26: VuongNested
+###################################################
+vuongtest(H3D, H3I, type = 'nested', hyp = TRUE)
+vuongtest(H3D, H3I, type = 'nested', hyp = FALSE)
+
+
+###################################################
+### code chunk number 27: SelectionBis
+###################################################
+S2Db <- mhurdle(shows ~ educ + size + sex + smsa | linc + linc2, 
+                Interview, dist = "ln", h2 = TRUE, corr = TRUE, method = "bhhh")
+
+
+###################################################
+### code chunk number 28: VuongOverlap
+###################################################
+vuongtest(S2D, S2Db, type="overlapping")
+
+
+###################################################
+### code chunk number 29: VuongOverlap2
+###################################################
+vuongtest(S2D, S2Db, type="overlapping", hyp=TRUE)
 
 

@@ -13,21 +13,23 @@
 ## rsq
 
 nm.mhurdle <- function(object,
-                       which = c("all", "h1", "h2", "h3", "sd", "corr", "tr"),
+                       which = c("all", "h1", "h2", "h3", "sd", "h4", "corr", "tr", "pos"),
                        ...){
     coefnames <- object$coef.names
     which <- match.arg(which)
     K <- sapply(coefnames,length)
     if (which == "all"){
         h2.names <- paste("h2", coefnames$h2,sep = ".")
-        h1.names <- h3.names <- NULL
+        h1.names <- h3.names <- h4.names <- NULL
         if (! is.null(coefnames$h1)) h1.names <- paste("h1", coefnames$h1,sep = ".")
         if (! is.null(coefnames$h3)) h3.names <- paste("h3", coefnames$h3,sep = ".")
         if (length(coefnames$sd) == 1) sd.names <- "sd"
+        if (! is.null(coefnames$h4)) h4.names <- paste("h4", coefnames$h4,sep = ".")
         else sd.names <- paste("sd", coefnames$sd, sep = ".")
         corr.names <- coefnames$corr
         tr.names <- coefnames$tr
-        result <- c(h1.names, h2.names, h3.names, sd.names, corr.names, tr.names)
+        mu.names <- coefnames$pos
+        result <- c(h1.names, h2.names, h3.names, sd.names, h4.names, corr.names, tr.names, mu.names)
     }
     else{
         result <- coefnames[[which]]
@@ -37,24 +39,27 @@ nm.mhurdle <- function(object,
 }
 
 sub.mhurdle <- function(object,
-                        which = c("all", "h1", "h2", "h3", "sd", "corr", "tr"),
+                        which = c("all", "h1", "h2", "h3", "sd", "h4", "corr", "tr", "pos"),
                         ...){
   # there is no need to check if the coefficient is relevant at it has
   # been checked previously by the nm.mhurdle function
-  which <- match.arg(which)
-  K <- sapply(object$coef.names, length)
-  if (which == "all")  sub <- 1:length(object$coefficients)
-  if (which == "h2")   sub <- (K[[1]] + 1):(K[[1]] + K[[2]])
-  if (which == "h1")   sub <- 1:K[[1]]
-  if (which == "h3")   sub <- (K[[1]] + K[[2]] + 1):(K[[1]] + K[[2]] + K[[3]])
-  if (which == "corr") sub <- K[[1]] + K[[2]] + K[[3]] + K[[4]] + 1
-  if (which == "sd")   sub <- (K[[1]] + K[[2]] + K[[3]] + 1):(K[[1]] + K[[2]] + K[[3]] + K[[4]])
-  if (which == "tr")   sub <- (K[[1]] + K[[2]] + K[[3]] + K[[4]])
-  sub
+    which <- match.arg(which)
+    if ("mhurdle" %in% class(object)) K <- lapply(object$coef.names, length)
+    else K <- lapply(object, length)
+    if (which == "all")  sub <- 1:sum(Reduce("c", K))
+    if (which == "h2")   sub <- (K$h1 + 1):(K$h1 + K$h2)
+    if (which == "h1")   sub <- 1:K$h1
+    if (which == "h3")   sub <- (K$h1 + K$h2 + 1):(K$h1 + K$h2 + K$h3)
+    if (which == "sd")   sub <- (K$h1 + K$h2 + K$h3 + 1)
+    if (which == "h4")   sub <- (K$h1 + K$h2 + K$h3 + 1 + 1):(K$h1 + K$h2 + K$h3 + 1 + K$h4)
+    if (which == "corr") sub <- (K$h1 + K$h2 + K$h3 + 1 + K$h4 + 1) : (K$h1 + K$h2 + K$h3 + 1 + K$h4 + K$corr)
+    if (which == "tr")   sub <- (K$h1 + K$h2 + K$h3 + 1 + K$h4 + K$corr + 1)
+    if (which == "pos")  sub <- K$h1 + K$h2 + K$h3 + 1 + K$h4 + K$corr + K$tr + 1
+    sub
 }
 
 coef.mhurdle <- function(object,
-                        which = c("all", "h1", "h2", "h3", "sd", "corr", "tr"),
+                        which = c("all", "h1", "h2", "h3", "h4", "sd", "corr", "tr", "pos"),
                       ...){
   which <- match.arg(which)
   nm <- nm.mhurdle(object, which)
@@ -65,7 +70,7 @@ coef.mhurdle <- function(object,
 }
 
 vcov.mhurdle <- function(object,
-                        which = c("all", "h1", "h2", "h3", "sd", "corr", "tr"),
+                        which = c("all", "h1", "h2", "h3", "h4", "sd", "corr", "tr", "pos"),
                       ...){
   which <- match.arg(which)
   nm <- nm.mhurdle(object, which)
@@ -107,24 +112,24 @@ summary.mhurdle <- function (object,...){
   std.err <- sqrt(diag(vcov(object)))
   z <- b/std.err
   p <- 2*(1-pnorm(abs(z)))
-  CoefTable <- cbind(b,std.err,z,p)
-  colnames(CoefTable) <- c("Estimate","Std. Error","t-value","Pr(>|t|)")
-  object$CoefTable <- CoefTable
-  object$rsq <- c(coefdet = rsq(object, type = "coefdet"),
-                  lratio  = rsq(object, type = "lratio"))
+  coefficients <- cbind(b,std.err,z,p)
+  colnames(coefficients) <- c("Estimate","Std. Error","t-value","Pr(>|t|)")
+  object$coefficients <- coefficients
+  object$r.squared <- c(coefdet = rsq(object, type = "coefdet"),
+                        lratio  = rsq(object, type = "lratio"))
   class(object) <- c("summary.mhurdle","mhurdle")
   return(object)
 }
 
 
 coef.summary.mhurdle <- function(object,
-                                 which = c("all", "h1", "h2", "h3", "sd", "corr", "tr"),
+                                 which = c("all", "h1", "h2", "h3", "sd", "corr", "tr", "pos"),
                                  ...){
   which <- match.arg(which)
   sub <- sub.mhurdle(object, which)
   nm <- nm.mhurdle(object, which)
-  result <- object$CoefTable
-  if (!is.null(sub)) result <- result[sub, , drop=FALSE]
+  result <- object$coefficients
+  if (!is.null(sub)) result <- result[sub, , drop = FALSE]
   rownames(result) <- nm
   result
 }
@@ -144,16 +149,16 @@ print.summary.mhurdle <- function(x, digits = max(3, getOption("digits") - 2),
   }
   
   cat("\nCoefficients :\n")
-  printCoefmat(x$CoefTable,digits=digits)
+  printCoefmat(x$coefficients, digits = digits)
   cat("\n")
-  df <- attr(x$logLik,"df")
+  df <- attr(x$logLik, "df")
 
   cat(paste("Log-Likelihood: ",
-            signif(logLik(x),digits),
+            signif(logLik(x), digits),
             " on ",df," Df\n",sep=""))
 
   cat("\nR^2 :\n")
-  rs <- x$rsq
+  rs <- x$r.squared
   cat(paste(" Coefficient of determination :", signif(rs['coefdet'], digits), "\n"))
   cat(paste(" Likelihood ratio index       :", signif(rs['lratio'], digits), "\n"))
   invisible(x)
@@ -176,17 +181,14 @@ predict.mhurdle <- function(object, newdata = NULL, ...){
         cl <- object$call
         dist <- ifelse(is.null(cl$dist), TRUE, cl$dist)
         corr <- ifelse(is.null(cl$corr), FALSE, cl$corr)
+        robust <- FALSE
         m <- model.frame(formula(object), newdata)
         X1 <- model.matrix(formula(object), m, rhs = 1)
         X2 <- model.matrix(formula(object), m, rhs = 2)
-        X3 <- model.matrix(formula(object), m, rhs = 3)
-        if (length(formula(object))[2] == 4)
-            X4 <- model.matrix(formula(object), m, rhs = 4)
-        else X4 <- numeric(0)
+        if (length(formula(object))[2] > 2) X3 <- model.matrix(formula(object), m, rhs = 3) else X3 <- NULL
+        if (length(formula(object))[2] == 4) X4 <- model.matrix(formula(object), m, rhs = 4) else X4 <- NULL
         y <- model.response(m)
         if (length(X1) == 0) X1 <- NULL
-        if (length(X3) == 0) X3 <- NULL
-        if (length(X4) == 0) X4 <- NULL
         result <- attr(mhurdle.lnl(coef(object), X1 = X1, X2 = X2, X3 = X3, X4 = X4, y = y,
                                    gradient = FALSE, fitted = TRUE,
                                    dist = dist, corr = corr), "fitted")
@@ -242,6 +244,10 @@ rsq <- function(object,
     Ko <- length(object$naive$coefficients)
     
     if (type == "lratio"){
+        ## print(logLik(object))
+        ## print(logLik(object, naive = TRUE))
+        ## print(c(K, Ko))
+              
         if (!adj) R2 <- 1 - logLik(object) / logLik(object, naive = TRUE)
         else R2 <- 1 - (logLik(object) - K) / (logLik(object, naive = TRUE) - Ko)
         R2 <- as.numeric(R2)
@@ -264,3 +270,120 @@ rsq <- function(object,
     }
     R2
 }
+
+
+nobs.mhurdle <- function(object, ...){
+    nrow(object$model)
+}
+
+
+getindex <- function(X1, X2, X3, X4, corr, dist, which){
+    K1 <- ifelse(is.null(X1), 0, ncol(X1))
+    K2 <- ncol(X2)
+    K3 <- ifelse(is.null(X3), 0, ncol(X3))
+    K4 <- ifelse(is.null(X4), 0, ncol(X4))
+    cumul <- 0
+
+    if (which == "h1"){
+        if (K1 == 0) return(numeric(0)) else return(1:K1)
+    }
+    cumul <- cumul + K1
+
+    if (which == "h2") return( (cumul + 1):(cumul + K2) )
+    cumul <- cumul + K2
+
+    if (which == "h3"){
+        if (K3 == 0) return(numeric(0)) else return( (cumul + 1) : (cumul + K3) )
+    }
+    cumul <- cumul + K3
+
+    if (which == "sd") return(cumul + 1)
+    cumul <- cumul + 1
+
+    if (which == "h4"){
+        if (K4 == 0) return(numeric(0)) else return( (cumul + 1) : (cumul + K4) )
+    }
+    cumul <- cumul + K4
+
+    if (corr){
+        h1 <- K1 > 0
+        h3 <- K3 > 0
+        if (! h1 & ! h3) return(numeric(0))
+        else{
+            if (h1 + h3 == 2){
+                if (which == "corr") return( (cumul + 1) : (cumul + 3) )
+                cumul <- cumul + 3
+            }
+            else{
+                if (which == "corr") return( (cumul + 1) )
+                cumul <- cumul + 1
+            }
+        }
+    }
+    else{
+        if (which == "corr") return(numeric(0))
+    }
+
+    if (dist %in% c("ihs", "bc", "bc2")){
+        if (which == "tr") return(cumul + 1)
+        cumul <- cumul + 1
+    }
+    else{
+        if (which == "tr") return(numeric(0))
+    }
+    
+    if (dist %in% c("ln2", "bc2")){
+        if (which == "pos") return(cumul + 1)
+        cumul <- cumul + 1
+    }
+    else{
+        if (which == "pos") return(numeric(0))
+    }
+}
+
+
+## extract.maxLik <- function (model, include.nobs = TRUE, ...){
+##     s <- summary(model, ...)
+##     names <- rownames(s$estimate)
+##     class(names) <- "character"
+##     co <- s$estimate[, 1]
+##     se <- s$estimate[, 2]
+##     pval <- s$estimate[, 4]
+##     class(co) <- class(se) <- class(pval) <- "numeric"
+##     n <- nrow(model$gradientObs)
+##     lik <- logLik(model)
+##     gof <- numeric()
+##     gof.names <- character()
+##     gof.decimal <- logical()
+##     gof <- c(gof, n, lik)
+##     gof.names <- c(gof.names, "Num. obs.", "Log Likelihood")
+##     gof.decimal <- c(gof.decimal, FALSE, TRUE)
+##     tr <- createTexreg(coef.names = names, coef = co, se = se, pvalues = pval,
+##                        gof.names = gof.names, gof = gof, gof.decimal = gof.decimal)
+##     return(tr)
+## }
+
+## setMethod("extract", signature = className("maxLik", "maxLik"), definition = extract.maxLik)
+
+extract.mhurdle <- function (model, include.nobs = TRUE, ...){
+    s <- summary(model, ...)
+    names <- rownames(s$coefficients)
+    class(names) <- "character"
+    co <- s$coefficients[, 1]
+    se <- s$coefficients[, 2]
+    pval <- s$coefficients[, 4]
+    class(co) <- class(se) <- class(pval) <- "numeric"
+    n <- nobs(model)
+    lik <- logLik(model)
+    gof <- numeric()
+    gof.names <- character()
+    gof.decimal <- logical()
+    gof <- c(gof, n, lik)
+    gof.names <- c(gof.names, "Num. obs.", "Log Likelihood")
+    gof.decimal <- c(gof.decimal, FALSE, TRUE)
+    tr <- createTexreg(coef.names = names, coef = co, se = se, pvalues = pval,
+                       gof.names = gof.names, gof = gof, gof.decimal = gof.decimal)
+    return(tr)
+}
+
+setMethod("extract", signature = className("mhurdle", "mhurdle"), definition = extract.mhurdle)
