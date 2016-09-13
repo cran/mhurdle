@@ -1,6 +1,6 @@
 Package: mhurdle
-Version: 1.1-6
-Date: 2016-08-04
+Version: 1.1-7
+Date: 2016-09-13
 Title: Multiple Hurdle Tobit Models
 Authors@R: c(person("Yves", "Croissant", role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr"),
              person("Fabrizio", "Carlevaro", role = "aut", email = "fabrizio.carlevaro@unige.ch"),
@@ -18,8 +18,8 @@ Author: Yves Croissant [aut, cre],
 Maintainer: Yves Croissant <yves.croissant@univ-reunion.fr>
 Repository: CRAN
 Repository/R-Forge/Project: mhurdle
-Repository/R-Forge/Revision: 66
-Repository/R-Forge/DateTimeStamp: 2016-08-04 14:20:30
-Date/Publication: 2016-08-04 21:49:09
+Repository/R-Forge/Revision: 67
+Repository/R-Forge/DateTimeStamp: 2016-09-13 05:34:42
+Date/Publication: 2016-09-13 08:50:14
 NeedsCompilation: yes
-Packaged: 2016-08-04 14:25:42 UTC; rforge
+Packaged: 2016-09-13 05:45:46 UTC; rforge

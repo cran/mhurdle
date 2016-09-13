@@ -1,4 +1,4 @@
-9e6fa527f10baceefc6649f7e5c7e4e5 *DESCRIPTION
+aa41acb97e80266fdd91e88850b6f9dd *DESCRIPTION
 0082a1dfea7d9c7d7c3d3c9bba19405d *NAMESPACE
 5be16bc6197a1ad0fdaa4d77d450d6cc *NEWS
 fae75c47d37f62e17ff595c7408896a3 *R/boxcox.R
@@ -11,13 +11,13 @@ f40586520aab9530fd74df4590691291 *R/ptnorm.R
 f6d9a17784fb678fef7efed05282340f *build/vignette.rds
 794e761831d31a5cd767ea95c3a3972e *data/Interview.rda
 0473cd3003b03c814d9ecf2688dcdeae *inst/doc/mhurdle.R
-d2ae173319230d29a1935d51a2d0e6b9 *inst/doc/mhurdle.pdf
+8f1c67bdae852d4bc89fdc0de17bfab4 *inst/doc/mhurdle.pdf
 d0f8950342283a21c13fdaf1148510bf *inst/doc/mhurdle.rnw
 91c620531389ba46f92fd683d588d283 *man/Interview.Rd
 1302d53e4ec5c2ee42e9fd8a8b0dd456 *man/mhurdle.Rd
 0ac426b4dd26cb9a7597948b1267f8bb *man/rsq.Rd
 6448a2dd9bec32a9ac2b8e78479e46f6 *man/vuongtest.Rd
-dce38f549ce9a1a8423ae760b8e30b1c *src/ptnorm.f
+50a09a6c57d8e9a2ce0231c9c84ee25f *src/ptnorm.f
 beab26fe4166575609902f35a5b7bbb8 *vignettes/biblio.tex
 8e51ea9e132775a8d77042f037b7fb42 *vignettes/bibliomhurdle.bib
 d0f8950342283a21c13fdaf1148510bf *vignettes/mhurdle.rnw
