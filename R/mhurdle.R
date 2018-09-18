@@ -1,8 +1,8 @@
 mhurdle <- function(formula, data, subset, weights, na.action,
                     start = NULL, dist = c("ln", "n", "bc", "ihs"), h2 = FALSE,
-                    scaled = TRUE, corr = FALSE, robust = TRUE, ...){
+                    scaled = TRUE, corr = FALSE, robust = TRUE,
+                    check.grad = FALSE, ...){
     fitted = TRUE
-    check.grad <- FALSE
     dots <- list(...)
     oldoptions <- options(warn = -1)
     on.exit(options(oldoptions))
@@ -43,7 +43,7 @@ mhurdle <- function(formula, data, subset, weights, na.action,
         geomean <- exp(mean(log(y[y > 0])))
         y <- y / geomean
     }
-    n <- length(y)
+    N <- length(y)
     if (length(X1) == 0) X1 <- NULL
     if (length(X2) == 0) stop("the second hurdle (consumption equation) is mandatory")
     if (length(X3) == 0) X3 <- NULL
@@ -52,12 +52,13 @@ mhurdle <- function(formula, data, subset, weights, na.action,
     h3 <- ! is.null(X3)
     
     #  2. One equation models
-    if (!h1 && !h3){
+    if (! h1 && ! h3){
         result <- onequation.mhurdle(X2, y, dist)
         result$naive <- NULL#naive
         result$call <- cl
         result$model <- mf
         result$formula <- formula
+        result$R2 <- c(null = NA, positive = NA)
         return(result)
     }
     
@@ -69,6 +70,7 @@ mhurdle <- function(formula, data, subset, weights, na.action,
         result$call <- cl
         result$model <- mf
         result$formula <- formula
+        result$R2 <- c(null = NA, positive = NA)
         return(result)
     }
 
@@ -93,7 +95,7 @@ mhurdle <- function(formula, data, subset, weights, na.action,
         if (corr){
             if (robust) rhoinit <- tan(0.1 * pi / 2) else rhoinit <- 0.1
             if (h1 + h3 == 2) start <- c(start, rho12 = rhoinit, rho13 = rhoinit, rho23 = rhoinit)
-            else start <- c(start, rho = rhoinit)
+            else start <- c(start, rhoinit)
         }
         if (dist %in% c("bc", "bc2", "ihs")) start <- c(start, tr = -0.1)
         if (dist %in% c("bc2", "ln2")) start <- c(start, pos = 1)
@@ -107,47 +109,61 @@ mhurdle <- function(formula, data, subset, weights, na.action,
             start[rho.pos] <- tan(start[rho.pos] * pi / 2)
         }
     }
-    result <- mhurdle.fit(start, X1, X2, X3, X4, y,
-                          gradient = TRUE, dist = dist, corr = corr,
-                          robust = robust, fitted = fitted, ...)
+    result <- mhurdle.fit(start, X1, X2, X3, X4, y, gradient = TRUE,
+                          dist = dist, corr = corr, robust = robust,
+                          fitted = fitted, check.grad = check.grad,
+                          ...)
+    if (check.grad) return(result)
     if (fitted & scaled) result$fitted.values[, 2] <- result$fitted.values[, 2] * geomean
     
     # 3. Compute the naive model
 
-#    if (FALSE){
     Pnull <- mean(y == 0)
-    if (dist != "ln"){
+    dist.naive <- dist
+    if (dist %in% c("ihs")) dist.naive <- "n"
+    if (dist %in% c("bc", "bc2", "ln2")) dist.naive <- "ln"
+    if (dist.naive != "ln"){
         Ec <- mean(y[y > 0])
         Vc <- var(y[y > 0])}
     else{
         Ec <- mean(log(y[y > 0]))
         Vc <- var(log(y[y > 0]))
     }
+
     start.naive <- c(rep(0.1, 1 + h1 + h3), 1)
     moments <- c(Pnull, Ec, Vc)
-    dist.naive <- dist
-    if (dist %in% c("ihs")) dist.naive <- "n"
-    if (dist %in% c("bc", "bc2", "ln2")) dist.naive <- "ln"
     naive <- maxLik(lnl.naive, start = start.naive,
                     dist = dist.naive, moments = moments,
                     h1 = h1, h3 = h3)
     coef.naive <- naive$est
-    logLik.naive <- structure(naive$max * n, nobs = length(y),
+    parts <- attr(naive$max, "parts") * c(Pnull, 1 - Pnull, 1 - Pnull) * N
+    logLik.naive <- structure(as.numeric(naive$max) * N, nobs = length(y),
+                              parts = parts, 
                               df = length(coef.naive), class = "logLik")
     naive <- list(coefficients = coef.naive, logLik = logLik.naive, code = naive$code)
-#}
-#    else naive <- NULL
 
     result$naive <- naive
     result$call <- cl
     result$formula <- formula
     result$model <- mf
+    
+    lnL1c <- attr( naive$logLik, "parts")[1] + attr( naive$logLik, "parts")[2]
+    lnL1u <- attr(result$logLik, "parts")[1] + attr(result$logLik, "parts")[2]
+
+    lnL2c <- attr( naive$logLik, "parts")[3] - attr( naive$logLik, "parts")[2]
+    lnL2u <- attr(result$logLik, "parts")[3] - attr(result$logLik, "parts")[2]
+
+    R1 <- 1 - (lnL1c / lnL1u) ^ (2 / N * lnL1c)
+    R2 <- 1 - (exp(lnL2c) / exp(lnL2u)) ^ (2 / (N * (1 - Pnull)))
+    
+    result$R2 <- c(null = R1, positive = R2)
     result
 }
 
 mhurdle.fit <- function(start, X1, X2, X3, X4, y, gradient = FALSE, fit = FALSE,
                         dist = c("ln", "n", "tn", "bc", "ihs", "bc2", "ln2"),
-                        corr = FALSE, robust = TRUE,  fitted = FALSE, ...){
+                        corr = FALSE, robust = TRUE,  fitted = FALSE,
+                        check.grad = FALSE, ...){
     start.time <- proc.time()
     h1 <- ! is.null(X1)
     h3 <- ! is.null(X3)
@@ -158,11 +174,11 @@ mhurdle.fit <- function(start, X1, X2, X3, X4, y, gradient = FALSE, fit = FALSE,
     
     if (corr){
         if (h1 & h3) rho.names <- c("corr12", "corr13", "corr23")
-        else rho.names <- c("corr")
+        else rho.names <- ifelse(h1, "corr12", "corr23")
     }
     else rho.names <- NULL
     if (dist %in% c("bc", "bc2", "ihs")) tr.names <- "tr" else tr.names <- NULL
-    if (dist %in% c("ln2", "bc2")) mu.names <- "mu" else mu.names <- NULL
+    if (dist %in% c("ln2", "bc2")) mu.names <- "pos" else mu.names <- NULL
 
     coef.names <- list(h1   = colnames(X1),
                        h2   = colnames(X2),
@@ -184,7 +200,6 @@ mhurdle.fit <- function(start, X1, X2, X3, X4, y, gradient = FALSE, fit = FALSE,
                                      gradient = TRUE, fitted = FALSE,
                                      dist = dist, corr = corr,
                                      robust = robust)
-    check.grad <- FALSE
     if (check.grad){
         ngrad <- c()
         oparam <- start
@@ -196,11 +211,9 @@ mhurdle.fit <- function(start, X1, X2, X3, X4, y, gradient = FALSE, fit = FALSE,
             ngrad <- c(ngrad, sum((as.numeric(f(oparam)) - fo) / eps))
             oparam <- start
         }
-        print(cbind(start, agrad, ngrad))
-        print(as.numeric(sum(fo)))
-        stop()
+        return(cbind(start, agrad, ngrad))
     }
-    maxl <- maxLik(f, start = start, ...)
+    maxl <- maxLik(f, start = start, control = list(lambdatol = 1E-20),  ...)
     nb.iter <- maxl$iterations
     convergence.OK <- maxl$code <= 2
     coefficients <- maxl$estimate
@@ -215,6 +228,7 @@ mhurdle.fit <- function(start, X1, X2, X3, X4, y, gradient = FALSE, fit = FALSE,
     logLik <- f(coefficients)
     gradi <- attr(logLik, "gradi")
     logLik <- structure(as.numeric(logLik), df = length(coefficients),
+                        parts = attr(logLik, "parts"),
                         nobs = length(y), class = "logLik")
     hessian <- maxl$hessian
     elaps.time <- proc.time() - start.time
@@ -247,6 +261,7 @@ mhurdle.fit <- function(start, X1, X2, X3, X4, y, gradient = FALSE, fit = FALSE,
                    fitted.values = fitted.values,
                    logLik        = logLik,
                    gradient      = gradi,
+                   hessian       = hessian,
                    formula       = NULL,
                    model         = NULL,
                    coef.names    = coef.names,

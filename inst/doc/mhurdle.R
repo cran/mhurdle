@@ -40,7 +40,7 @@ library(texreg)
 
 
 ###################################################
-### code chunk number 6: mhurdle.rnw:2228-2232 (eval = FALSE)
+### code chunk number 6: mhurdle.rnw:2229-2233 (eval = FALSE)
 ###################################################
 ## texreg(list(Sn, Sbc, Sln), 
 ##        custom.model.names = c("normal tobit", "log-normal tobit", "box-cox tobit"), 
@@ -49,7 +49,7 @@ library(texreg)
 
 
 ###################################################
-### code chunk number 7: mhurdle.rnw:2235-2239
+### code chunk number 7: mhurdle.rnw:2236-2240
 ###################################################
 texreg(list(Sn, Sbc, Sln), 
        custom.model.names = c("normal tobit", "log-normal tobit", "box-cox tobit"), 
@@ -67,14 +67,14 @@ Sln <- update(Stn, dist = "ln")
 
 
 ###################################################
-### code chunk number 9: mhurdle.rnw:2272-2274
+### code chunk number 9: mhurdle.rnw:2273-2275
 ###################################################
 Slnd <- update(Sln, corr = TRUE)
 coef(summary(Slnd), "corr")
 
 
 ###################################################
-### code chunk number 10: mhurdle.rnw:2282-2286 (eval = FALSE)
+### code chunk number 10: mhurdle.rnw:2283-2287 (eval = FALSE)
 ###################################################
 ## texreg(list(Stn, Sln, Sbc), 
 ##        custom.model.names = c("truncated-normal", "log-normal", "box-cox"), 
@@ -83,7 +83,7 @@ coef(summary(Slnd), "corr")
 
 
 ###################################################
-### code chunk number 11: mhurdle.rnw:2290-2294
+### code chunk number 11: mhurdle.rnw:2291-2295
 ###################################################
 texreg(list(Stn, Sln, Sbc), 
        custom.model.names = c("truncated-normal", "log-normal", "box-cox"), 

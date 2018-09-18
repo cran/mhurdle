@@ -1,5 +1,6 @@
 \name{vuongtest}
 \alias{vuongtest}
+\alias{ndvuongtest}
 \title{Vuoung test for non-nested models}
 \description{
   The Vuong test is suitable to discriminate between two non-nested models.
@@ -9,7 +10,7 @@ vuongtest(x, y,
           type = c("non-nested", "nested", "overlapping"),
           hyp = FALSE,
           variance = c("centered", "uncentered"),
-          matrix = c("large", "reduced")
+          matrix = c("large", "reduced") 
          )
 }
 \arguments{
