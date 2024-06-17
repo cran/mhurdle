@@ -3,6 +3,10 @@
 \docType{import}
 \name{reexports}
 \alias{reexports}
+\alias{estfun}
+\alias{bread}
+\alias{meat}
+\alias{llcont}
 \alias{glance}
 \alias{tidy}
 \alias{prediction}
@@ -18,6 +22,10 @@ below to see their documentation.
 
   \item{margins}{\code{\link[margins]{margins}}}
 
+  \item{nonnest2}{\code{\link[nonnest2]{llcont}}}
+
   \item{prediction}{\code{\link[prediction]{prediction}}}
+
+  \item{sandwich}{\code{\link[sandwich]{bread}}, \code{\link[sandwich]{estfun}}, \code{\link[sandwich]{meat}}}
 }}
 

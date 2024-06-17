@@ -45,31 +45,37 @@ L111D2 <- update(L111D, start = coef(L111D), robust = FALSE)
 L111I <- update(L111D, corr = FALSE)
 L111I2 <- update(L111I, start = coef(L111I), robust = FALSE)
 
-## ----label = tabmodels, include = FALSE, eval = TRUE-----------
+## ----label = estimations, echo = FALSE, eval = TRUE, results = 'asis'----
 models <- list(L110D = L110D, L011D = L011D, 
                L101D = L101D, L111D = L111D, L111I = L111I)
-coefs <- unique(Reduce("c", lapply(models, function(x) names(coef(x)))))
-coefs1 <- grep("h1", coefs)
-coefs2 <- grep("h2", coefs)
-coefs3 <- grep("h3", coefs)
-coefso <- (1:length(coefs))[-c (coefs1, coefs2, coefs3)]
-custcoefs <- coefs
-custcoefs[coefso] <- c("$\\sigma$", "$\\rho_{12}$", "$\\alpha$", "$\\rho_{23}$", "$\\rho_{13}$")
-coefs.h <- grep("h.\\.", coefs)
-#custcoefs[coefs.h] <- substring(custcoefs[coefs.h], 4, 1E4)
-groups <- list("**Hurdle 1**" = 1:length(coefs1),
-               "**Hurlde 2**" = (length(coefs1)+1):(length(coefs1) + length(coefs2)),
-               "**Hurdle 3**"= (length(coefs1)+length(coefs2)+1):(length(coefs1) + length(coefs2) + length(coefs3)),
-               "**Others**" = (length(coefs1) + length(coefs2) + length(coefs3) + 1) : (length(coefs1) + length(coefs2) + length(coefs3) + length(coefso)))
-#coeflabels <- gsub("h[1-3]\\.(\\w*)", "\\1", coefs)
+coefs <- unique(names(Reduce("c", lapply(models, coef))))
+o_h1 <- grep("h1", coefs, value = TRUE)
+o_h2 <- grep("h2", coefs, value = TRUE)
+o_h3 <- grep("h3", coefs, value = TRUE)
+n_h1 <- substr(o_h1, 4, 100)
+n_h2 <- paste(substr(o_h2, 4, 100), " ", sep = "")
+n_h3 <- paste(substr(o_h3, 4, 100), "  ", sep = "")
+mps <- c(n_h1, n_h2, n_h3,"$\\sigma$", "$\\alpha$", "$\\rho_{12}$", "$\\rho_{13}$", "$\\rho_{23}$")
+names(mps) <- c(o_h1, o_h2, o_h3, "sd.sd", "pos", "corr12", "corr13", "corr23")
 
-## ----estimations, echo = FALSE, results = 'asis', eval = TRUE----
-texreg::texreg(models, reorder.coef = c(coefs1, coefs2, coefs3, coefso), 
-       custom.coef.names = custcoefs,#[c(coefs1, coefs2, coefs3, coefso)],
-       caption = "Estimation of cencored models for the fees and admissions good",
-       label = "tab:estimations",
-       groups = groups
-       ) 
+gm <- tibble::tribble(
+    ~raw,        ~clean,          ~fmt,
+    "nobs",      "$N$",             0,
+    "dpar", "degree of par.",       1,
+    "nobs.zero", "$N_o$",           0,
+    "nobs.pos", "$N_+$",            0,
+    "R2.zero", "$R^2_o$",           3,
+    "R2.pos", "$R^2_+$",            3,
+    "logLik", "log likelihood",     1)
+
+v <- modelsummary::msummary(models,
+                       statistic = NULL, estimate = "{estimate} ({std.error})", fmt = 2,
+                       title = "Multiple hurdle regressions",
+                       coef_map = mps,
+                       gof_map = gm, escape = FALSE)
+## v <- kableExtra::pack_rows(v, index = c(selection = 5, consumption = 2, expense = 5,
+##                             "Miscellanous parameters" = 5, "Goodness of fit measures" = 5))
+v
 
 ## ----label = loglik, results = 'hide'--------------------------
 library("lmtest")
@@ -82,12 +88,11 @@ vuongtest(L111D, L111I, type = "nested")
 pvlr <- round(lrtest(L111D, L111I)[["Pr(>Chisq)"]][2], 3)
 pvvuong <- vuongtest(L111D, L111I, type = "nested")$p.value
 
-## ----label = vuongdh, results = 'hide'-------------------------
-ndvuongtest(L110D, L011D)
+## ----label = vuongdh, eval = FALSE-----------------------------
+#  vuongtest(L110D, L011D)
 
 ## ----label hvuongunnested, include = FALSE---------------------
-unnested <- ndvuongtest(L110D, L011D)
-stat <- as.numeric(round(unnested$trad$statistic, 3))
-pvaltrad <- round(unnested$trad$p.value, 3)
-pvalshi <- round(unnested$nd$p.value, 3)
+vt <- vuongtest(L110D, L011D)
+stat <- as.numeric(round(vt$statistic, 3))
+pvaltrad <- round(vt$p.value, 3)
 
